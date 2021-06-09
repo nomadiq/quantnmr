@@ -20,6 +20,13 @@ def fit_exp_decay(t, I, param_guess=None):
     return fit, env_model(t, fit[0][0], fit[0][1], fit[0][2])
 
 
+def tauc_2_MW(tc):
+    if tc < 0.0000001:  # probably units is nanoseconds
+        tc = tc * 1000000000
+    # return MW guess in kDa units
+    return tc / 0.615
+
+
 def J(w, tc):
     return 0.4 * tc / (1 + (w ** 2 * tc ** 2))
 
