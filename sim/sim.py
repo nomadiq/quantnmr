@@ -27,6 +27,11 @@ def tauc_2_MW(tc):
     return tc / 0.615
 
 
+def MW_2_tc(MW):
+
+    return MW * 0.615
+
+
 def J(w, tc):
     return 0.4 * tc / (1 + (w ** 2 * tc ** 2))
 
