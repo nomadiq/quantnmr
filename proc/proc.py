@@ -658,13 +658,12 @@ class LINData2D:
                 raise ValueError(
                     "insanity: number of dimensions in 'points' and 'dim_status' don't match"
                 )
-            else:
-                for i in range(len(dim_status)):
-                    if dim_status[i] not in ["t", "f"]:
-                        print(dim_status[i])
-                        raise ValueError(
-                            "dimension domains must be 'f' - frequency or 't' - time"
-                        )
+            for i in range(len(dim_status)):
+                if dim_status[i] not in ["t", "f"]:
+                    print(dim_status[i])
+                    raise ValueError(
+                        "dimension domains must be 'f' - frequency or 't' - time"
+                    )
 
         # lets store the points
         self.points = points
@@ -1046,13 +1045,12 @@ class LINData3D:
                 raise ValueError(
                     "insanity: number of dimensions in 'points' and 'dim_status' don't match"
                 )
-            else:
-                for i in range(len(dim_status)):
-                    if dim_status[i] not in ["t", "f"]:
-                        print(dim_status[i])
-                        raise ValueError(
-                            "dimension domains must be 'f' - frequency or 't' - time"
-                        )
+            for i in range(len(dim_status)):
+                if dim_status[i] not in ["t", "f"]:
+                    print(dim_status[i])
+                    raise ValueError(
+                        "dimension domains must be 'f' - frequency or 't' - time"
+                    )
 
         # lets store the points to the class instance
         self.points = points
