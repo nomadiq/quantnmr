@@ -53,11 +53,8 @@ def sample_matrix_to_schedule(sample_matrix):
     # add 0,0 to the shuffle
     pgs_schedule = [temp] + pgs_schedule
 
-    # finally add PGS schedule to rest of sampled points
-    final_schedule = pgs_schedule + rest_schedule
-
     # return it
-    return final_schedule
+    return pgs_schedule + rest_schedule
 
 
 # gaps
@@ -90,11 +87,10 @@ def cos_w(x, t, N):
 def weight_constructor(weights):
     if len(weights) == 1:
         return np.asarray(weights[0])
-    else:
-        outer = weights[0]
-        for i in range(1, len(weights)):
-            outer = np.multiply.outer(outer, weights[i])
-        return outer
+    outer = weights[0]
+    for i in range(1, len(weights)):
+        outer = np.multiply.outer(outer, weights[i])
+    return outer
 
 
 def gap_sched(weight_func, params):
@@ -109,28 +105,26 @@ def gap_sched(weight_func, params):
 
     while len(s) != num_selec + 1:
         s.append(0)  # always select
-        i = i + 1  # the first point
+        i += 1
         # loop through making samples
         while i < N + 1:
-            i = i + np.random.poisson(
+            i += np.random.poisson(
                 (N / num_selec) * w * (weight_func(i, param, N - 1))
             )
             s.append(i)
-            i = i + 1
+            i += 1
 
         # test samples - too many?
         if len(s) > num_selec + 1:
-            w = w * 1.02  # change weight
+            w *= 1.02
             s = []  # reset sample list
             i = 0  # reset sample pointer
 
-        # test samples - too few?
         elif len(s) < num_selec + 1:
-            w = w / 1.02  # change weight
+            w /= 1.02
             s = []  # reset sample list
             i = 0  # reset sample pointer
 
-        # test samples - last point does not exceed sample range?
         elif s[-1] < N:
             s = []  # not weights fault - reset sample list
             i = 0  # reset sample pointer
