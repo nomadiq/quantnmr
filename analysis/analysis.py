@@ -1,16 +1,18 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-matlab_colors =  [(0.000,0.447,0.741), 
-          (0.850,0.325,0.098), 
-          (0.929,0.694,0.125), 
-          (0.494,0.184,0.556), 
-          (0.466,0.674,0.188),
-          (0.000,0.447,0.741), 
-          (0.850,0.325,0.098), 
-          (0.929,0.694,0.125), 
-          (0.494,0.184,0.556), 
-         ]
+matlab_colors = [
+    (0.000, 0.447, 0.741),
+    (0.850, 0.325, 0.098),
+    (0.929, 0.694, 0.125),
+    (0.494, 0.184, 0.556),
+    (0.466, 0.674, 0.188),
+    (0.000, 0.447, 0.741),
+    (0.850, 0.325, 0.098),
+    (0.929, 0.694, 0.125),
+    (0.494, 0.184, 0.556),
+]
+
 
 def plot_series_1D(
     the_data=None,
@@ -121,7 +123,7 @@ class Scale:
 
     def linear(self, indomain):
 
-        if self.strict is True and (indomain <= self.d_min or indomain >= self.d_max):
+        if self.strict is True and (indomain < self.d_min or indomain > self.d_max):
             raise Exception(
                 f"input value {indomain} is outside the input domain for this scale"
             )
@@ -132,7 +134,7 @@ class Scale:
 
     def linear_r(self, inrange):
 
-        if self.strict is True and (inrange <= self.o_min or inrange >= self.o_max):
+        if self.strict is True and (inrange < self.o_min or inrange > self.o_max):
             raise Exception(
                 f"input value {inrange} is outside the input domain for this scale"
             )

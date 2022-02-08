@@ -1439,14 +1439,10 @@ class NUSData3D:
 
         # bruker data is four bytes per point so
         # len(nus_data) should equal 4 * 2**self.nus_dimensions * self.nus_points * self.points_in_direct_fid
-        if (
+        self.sane = (
             4 * 2 ** self.nusDimensions * self.nusPoints * self.pointsInDirectFid
             == len(self.nusData)
-        ):
-            self.sane = True
-        else:
-            self.sane = False
-
+        )
         # reshape the data
         self.nusData = np.reshape(
             self.nusData, (self.pointsInDirectFid, 4, self.nusPoints), order="F"
@@ -1461,7 +1457,7 @@ class NUSData3D:
         This function truncates the nusData, nusList and convertedNUSData variables to have only
         'trunc' number of sampled points
         """
-        self.nusList = self.nusList[0:trunc]
+        self.nusList = self.nusList[:trunc]
         self.nusData = self.nusData[:, :, 0:trunc]
         self.convertedNUSData = self.convertedNUSData[:, :, 0:trunc]
         self.nusPoints = len(self.nusList)
