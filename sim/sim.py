@@ -37,12 +37,18 @@ def tauc_2_MW(tc):
     if tc < 0.0000001:  # probably units is nanoseconds
         tc = tc * 1000000000
     # return MW guess in kDa units
-    return tc / 0.615
+    return (tc - 0.775137) / 0.433859
+
+def tc_2_MW(tc):
+    if tc < 0.0000001:  # probably units is nanoseconds
+        tc = tc * 1000000000
+    # return MW guess in kDa units
+    return (tc - 0.775137) / 0.433859
 
 
 def MW_2_tc(MW):
 
-    return MW * 0.615
+    return MW * 0.433859 + 0.775137
 
 
 def J(w, tc):
@@ -277,9 +283,7 @@ class Scale:
     """
     A Scale Class
     """
-
     def __init__(self, domainrange, outrange, strict=False):
-
         self.d_min = domainrange[0]
         self.d_max = domainrange[1]
         self.d_scope = self.d_max - self.d_min
