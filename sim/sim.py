@@ -19,6 +19,7 @@ def fit_exp_decay(t, I, param_guess=None):
     fit = curve_fit(env_model, t, I, p0=param_guess, maxfev=200000)
     return fit, env_model(t, fit[0][0], fit[0][1], fit[0][2])
 
+
 def fit_exp_decay_to_zero(t, I, param_guess=None):
     # Fit relaxation curves to extract time parameters
     if param_guess is None:
@@ -26,7 +27,6 @@ def fit_exp_decay_to_zero(t, I, param_guess=None):
         param_guess = np.zeros(2)
         param_guess[0] = 20
         param_guess[1] = I[0]
-        
 
     env_model = lambda t, R, a: a * np.exp(-R * t)
     fit = curve_fit(env_model, t, I, p0=param_guess, maxfev=200000)
@@ -290,7 +290,7 @@ class Scale:
 
     def linear(self, indomain):
 
-        if self.strict is True and (indomain <= self.d_min or indomain >= self.d_max):
+        if self.strict is True and (indomain < self.d_min or indomain > self.d_max):
             raise Exception(
                 f"input value {indomain} is outside the input domain for this scale"
             )
@@ -301,7 +301,7 @@ class Scale:
 
     def linear_r(self, inrange):
 
-        if self.strict is True and (inrange <= self.o_min or inrange >= self.o_max):
+        if self.strict is True and (inrange < self.o_min or inrange > self.o_max):
             raise Exception(
                 f"input value {inrange} is outside the input domain for this scale"
             )
