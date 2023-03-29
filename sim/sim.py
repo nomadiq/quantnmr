@@ -277,9 +277,7 @@ class Scale:
     """
     A Scale Class
     """
-
     def __init__(self, domainrange, outrange, strict=False):
-
         self.d_min = domainrange[0]
         self.d_max = domainrange[1]
         self.d_scope = self.d_max - self.d_min
