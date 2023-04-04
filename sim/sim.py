@@ -255,9 +255,12 @@ class Default_Params:
         self.gamma_N = -27.116 * np.power(
             10, 6, dtype=np.longdouble
         )  # 15N gyromagnetic ratio
-        self.gamma_C = -67.2828 * np.power(
+        self.gamma_C = 67.2828 * np.power(
             10, 6, dtype=np.longdouble
-        )  # 15N gyromagnetic ratio
+        )  # 13C gyromagnetic ratio
+        self.gamma_D = 41.065 * np.power(
+            10, 6, dtype=np.longdouble
+        )  # 2H gyromagnetic ratio
         self.r = 1.02 * (
             1 / np.power(10, 10, dtype=np.longdouble)
         )  # internuclear distance
