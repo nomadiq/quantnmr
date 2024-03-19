@@ -2,6 +2,36 @@ import numpy as np
 from scipy.optimize.minpack import curve_fit
 import pymc as pm
 
+
+def fit_ls_ratio_model(t, R, param_init=None):
+    """
+    Parameters
+    ----------
+
+    Fit ratio of 3Q and SQ data using least squares approach to model. 
+    t: numpy array of floats
+        Time delays used in the experiment
+    R: numpy 1D array of floats with the ratios for a single spin system
+
+    Returns
+    -------
+
+    tuple of np.array, np.array
+    (the return parameters, eta and delta, error estimates for each parameter)
+    """
+    
+    # Fit relaxation curves to extract relaxation rate parameters
+    if param_init is None:
+        # make guess
+        param_init = np.zeros(2)
+        param_init[0] = 300
+        param_init[1] = -100
+        
+
+    env_model = lambda t, eta, delta: 0.75*eta*np.tanh(np.sqrt(eta**2 + delta**2)*t)/((np.sqrt(eta**2 + delta**2) - delta*np.tanh(np.sqrt(eta**2+delta**2)*t)))
+    fit = curve_fit(env_model, t, R, p0=param_init, maxfev=200000, bounds=((0, -1000), (1000, 100)), method='trf')
+    return fit[0], np.sqrt(np.diag(fit[1]))
+
 def fit_bayes_ratio_model(t, ratios):
 
 
@@ -146,4 +176,4 @@ def fit_bayes_biphasic_model(t, sinQ, triQ, R=100, I0=400, fit_ratio=False, calc
     bpe_deltas_std = model['posterior']['δ'].to_numpy().std(axis=(0,1,3))
     d = model['sample_stats']['diverging']
     print("Number of Divergent %d" % d.to_numpy().sum())
-    return bpe_etas_mean, bpe_etas_std, bpe_deltas_mean, bpe_deltas_std, model    
+    return bpe_etas_mean, bpe_etas_std, bpe_deltas_mean, bpe_deltas_std, model, sinQ, triQ  

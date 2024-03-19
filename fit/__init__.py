@@ -1,1 +1,1 @@
-from .fit3Q import *
+from .fit import *
