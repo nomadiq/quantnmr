@@ -5,6 +5,26 @@ from scipy.optimize.minpack import curve_fit
 #              Functions                #
 # ------------------------------------- #
 
+def eta_tc_2_O2(eta, tc): # 3Q methyl experiment
+    r = 1.813 * (1/ np.power(10,10, dtype=np.longdouble)) 
+    hbar = 6.62607004 * (1 / np.power(10, 34, dtype=np.longdouble)) / (2*np.pi)
+    mu_0 = 1.25663706 * (1 / np.power(10, 6, dtype=np.longdouble))
+    gammaH = 267.52218744 * np.power(10, 6, dtype=np.longdouble) 
+    theta = np.pi/2
+    P2 = 1/2*(3*np.cos(theta)**2 - 1)
+    o2 = (eta * (10/9) * (((4*np.pi)/mu_0)**2) * (r**6)) / ((P2**2) * (gammaH**4) * (hbar**2) * tc)
+    return o2
+
+def O2_tc_2_eta(O2, tc): # 3Q methyl experiment
+    r = 1.813 * (1/ np.power(10,10, dtype=np.longdouble)) 
+    hbar = 6.62607004 * (1 / np.power(10, 34, dtype=np.longdouble)) / (2*np.pi)
+    mu_0 = 1.25663706 * (1 / np.power(10, 6, dtype=np.longdouble))
+    gammaH = 267.52218744 * np.power(10, 6, dtype=np.longdouble) 
+    theta = np.pi/2
+    P2 = 1/2*(3*np.cos(theta)**2 - 1)
+    eta = (9/10) * ((P2**2) * (O2) * (gammaH**4) * (hbar**2) * tc * ((mu_0/(4*np.pi))**2 ))/ (r**6)
+    return eta
+
 
 def fit_exp_decay(t, I, param_guess=None):
     # Fit relaxation curves to extract time parameters
