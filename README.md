@@ -1,1 +1,1 @@
-# maunakini
+# QuantNMR
