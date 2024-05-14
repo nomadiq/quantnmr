@@ -225,3 +225,277 @@ def readserfile(path, filename):
     else:
         print('Not a valid Bruker Path for Serial File')
         return 0
+
+
+
+def get_aq_mod(acq):
+
+    if isinstance(acq, int):
+        aq_mod_dict = {
+            0: "qf",
+            1: "qsim",
+            2: "qseq",
+            3: "DQD",
+            4: "parallelQsim",
+            5: "parallelDQD",
+        }
+
+        return aq_mod_dict[acq]
+    else:
+        return None
+
+
+def get_fn_mod(acq):
+
+    if isinstance(acq, int):
+        fn_mod_dict = {
+            0: "undefined",
+            1: "QF",
+            2: "QSEQ",
+            3: "TPPI",
+            4: "States",
+            5: "States-TPPI",
+            6: "Echo-Antiecho",
+        }
+
+        return fn_mod_dict[acq]
+    else:
+        return None
+
+
+def remove_bruker_delay(data, grpdly):
+    n = len(data)
+    integer_shift = np.floor(grpdly)
+    fract_shift = grpdly - integer_shift
+    data = np.roll(data, -int(integer_shift))
+    data = nmr_fft(data) / n
+    data = data * np.exp(2.0j * np.pi * (fract_shift) * np.arange(n) / n)
+    data = i_nmr_fft(data) * n
+    return data
+
+def dd2g(dspfvs, decim):
+    dspdic = {
+        10: {
+            2: 44.75,
+            3: 33.5,
+            4: 66.625,
+            6: 59.083333333333333,
+            8: 68.5625,
+            12: 60.375,
+            16: 69.53125,
+            24: 61.020833333333333,
+            32: 70.015625,
+            48: 61.34375,
+            64: 70.2578125,
+            96: 61.505208333333333,
+            128: 70.37890625,
+            192: 61.5859375,
+            256: 70.439453125,
+            384: 61.626302083333333,
+            512: 70.4697265625,
+            768: 61.646484375,
+            1024: 70.48486328125,
+            1536: 61.656575520833333,
+            2048: 70.492431640625,
+        },
+        11: {
+            2: 46.0,
+            3: 36.5,
+            4: 48.0,
+            6: 50.166666666666667,
+            8: 53.25,
+            12: 69.5,
+            16: 72.25,
+            24: 70.166666666666667,
+            32: 72.75,
+            48: 70.5,
+            64: 73.0,
+            96: 70.666666666666667,
+            128: 72.5,
+            192: 71.333333333333333,
+            256: 72.25,
+            384: 71.666666666666667,
+            512: 72.125,
+            768: 71.833333333333333,
+            1024: 72.0625,
+            1536: 71.916666666666667,
+            2048: 72.03125,
+        },
+        12: {
+            2: 46.0,
+            3: 36.5,
+            4: 48.0,
+            6: 50.166666666666667,
+            8: 53.25,
+            12: 69.5,
+            16: 71.625,
+            24: 70.166666666666667,
+            32: 72.125,
+            48: 70.5,
+            64: 72.375,
+            96: 70.666666666666667,
+            128: 72.5,
+            192: 71.333333333333333,
+            256: 72.25,
+            384: 71.666666666666667,
+            512: 72.125,
+            768: 71.833333333333333,
+            1024: 72.0625,
+            1536: 71.916666666666667,
+            2048: 72.03125,
+        },
+        13: {
+            2: 2.75,
+            3: 2.8333333333333333,
+            4: 2.875,
+            6: 2.9166666666666667,
+            8: 2.9375,
+            12: 2.9583333333333333,
+            16: 2.96875,
+            24: 2.9791666666666667,
+            32: 2.984375,
+            48: 2.9895833333333333,
+            64: 2.9921875,
+            96: 2.9947916666666667,
+        },
+    }
+    return dspdic[dspfvs][decim]
+
+
+
+
+class LINData3D:
+    def __init__(
+        self,
+        data_dir=".",
+        ser_file="ser",
+        points=None,
+        dim_status=None,
+        decim=None,
+        dspfvs=None,
+        grpdly=None,
+    ):  # sourcery no-metrics
+
+        self.ac1 = os.path.join(data_dir, "acqus")
+        self.ac2 = os.path.join(data_dir, "acqu2s")
+        self.ac3 = os.path.join(data_dir, "acqu3s")
+        self.ser = os.path.join(data_dir, "ser")
+        self.pp = os.path.join(data_dir, "pulseprogram")
+        self.ser = os.path.join(data_dir, ser_file)
+        self.dir = data_dir
+        self.acq = [0, 0, 0]  # acquisition modes start as undefined
+
+        # dictionary of acquisition modes for Bruker
+        self.acqDict = {
+            0: "undefined",
+            1: "qf",
+            2: "qsec",
+            3: "tppi",
+            4: "states",
+            5: "states-tppi",
+            6: "echo-antiecho",
+        }
+
+        # check if we are a Bruker 2D data set
+        if (
+            os.path.isfile(self.ac1)
+            and os.path.isfile(self.ac2)
+            and os.path.isfile(self.ac3)
+            and os.path.isfile(self.ser)
+            and os.path.isfile(self.pp)
+        ):
+            self.valid = True
+
+        else:
+            self.valid = False
+            print("Data Directory does not seem to contain Bruker 3D Data")
+
+        p0 = p1 = p2 = 0  # we'll find these in the files
+        dec = dsp = grp = 0  # we'll find these in the files
+
+        with open(self.ac1, "r") as acqusfile:
+            for line in acqusfile:
+                if "##$TD=" in line:
+                    (_, value) = line.split()
+                    p0 = int(value)
+                if "##$DECIM=" in line:
+                    (_, value) = line.split()
+                    dec = int(value)
+                if "##$DSPFVS=" in line:
+                    (_, value) = line.split()
+                    dsp = int(value)
+                if "##$GRPDLY=" in line:
+                    (_, value) = line.split()
+                    grp = float(value)
+
+                if "##$BYTORDA=" in line:
+                    (_, value) = line.split()
+                    self.byte_order = float(value)
+
+                self.acq[0] = 0  # doesnt matter we assume DQD for direct anyway
+
+        with open(self.ac2, "r") as acqusfile:
+            for line in acqusfile:
+                if "##$TD=" in line:
+                    (_, value) = line.split()
+                    p1 = int(value)
+
+                if "##$FnMODE=" in line:
+                    (_, value) = line.split()
+                    self.acq[1] = int(value)
+
+        with open(self.ac3, "r") as acqusfile:
+            for line in acqusfile:
+                if "##$TD=" in line:
+                    (_, value) = line.split()
+                    p2 = int(value)
+
+                if "##$FnMODE=" in line:
+                    (_, value) = line.split()
+                    self.acq[2] = int(value)
+
+        if p0 and p1 and p2:  # we got # points for all three dimensions
+            points = [p0, p1, p2]
+        else:
+            print("problem with detecting number of points in data")
+            self.valid = False
+
+        if dec != 0:
+            self.decim = dec
+        if dsp != 0:
+            self.dspfvs = dsp
+        if grp:
+            self.grpdly = grp
+        elif dec != 0 and dsp != 0:
+            self.grpdly = dd2g(self.dspfvs, self.decim)
+        else:
+            print(
+                "problem with detecting / determining grpdly - needed for Bruker conversion"
+            )
+            self.valid = False
+
+        print("Data Points structure is: " + str(points))
+        print(
+            "DECIM= "
+            + str(self.decim)
+            + " DSPFVS= "
+            + str(self.dspfvs)
+            + " GRPDLY= "
+            + str(self.grpdly)
+        )
+
+        
+        
+        # lets store the points to the class instance
+        self.points = points
+
+        # now lets load in the bruker serial file
+        with open(self.ser, "rb") as serial_file:
+            if self.byte_order == 0:
+                self.raw_data = np.frombuffer(serial_file.read(), dtype="<i4")
+            elif self.byte_order == 1:
+                self.raw_data = np.frombuffer(serial_file.read(), dtype=">i4")
+
+        # now reshape the data
+        self.raw_data = np.reshape(self.raw_data, np.asarray(self.points), order="F")
+        
