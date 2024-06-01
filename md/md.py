@@ -103,7 +103,8 @@ def calc_unit_vectors(trajectory_list: list, resname: str='MET', atoms: list=['S
     n_systems = selection_systems.n_residues
     system_idx = sorted(set(selection_systems.resids))
     print(f'Residue type: {resname} found at {system_idx} and there are {n_systems} of them.')
-    norm_bond_vectors = np.zeros((n_traj, n_frames, n_systems, 3))
+    #norm_bond_vectors = np.zeros((n_traj, n_frames, n_systems, 3))
+    norm_bond_vectors = np.zeros((n_frames, n_traj, n_systems, 3))
     for n, u in enumerate(trajectory_list):
         selection_0 = u.select_atoms(f'resname {resname} and name {atoms[0]}')
         selection_1 = u.select_atoms(f'resname {resname} and name {atoms[1]}')
@@ -115,7 +116,7 @@ def calc_unit_vectors(trajectory_list: list, resname: str='MET', atoms: list=['S
             ts_bond_vectors = position_0 - position_1 # num_systems selected x 3 (x, y, z)
         
             for j, a in enumerate(ts_bond_vectors):
-                norm_bond_vectors[n, i, j, :] = a/np.linalg.norm(a)
+                norm_bond_vectors[i, n, j, :] = a/np.linalg.norm(a)
         
             
     return norm_bond_vectors
