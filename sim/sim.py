@@ -26,32 +26,6 @@ def O2_tc_2_eta(O2, tc): # 3Q methyl experiment
     return eta
 
 
-def fit_exp_decay(t, I, param_guess=None):
-    # Fit relaxation curves to extract time parameters
-    if param_guess is None:
-        # make guess
-        param_guess = np.zeros(3)
-        param_guess[0] = 20
-        param_guess[1] = I[0]
-        param_guess[2] = I[0] * 0.01  # 1% of most intense point
-
-    env_model = lambda t, R, a, b: a * np.exp(-R * t) + b
-    fit = curve_fit(env_model, t, I, p0=param_guess, maxfev=200000)
-    return fit, env_model(t, fit[0][0], fit[0][1], fit[0][2])
-
-
-def fit_exp_decay_to_zero(t, I, param_guess=None):
-    # Fit relaxation curves to extract time parameters
-    if param_guess is None:
-        # make guess
-        param_guess = np.zeros(2)
-        param_guess[0] = 20
-        param_guess[1] = I[0]
-
-    env_model = lambda t, R, a: a * np.exp(-R * t)
-    fit = curve_fit(env_model, t, I, p0=param_guess, maxfev=200000)
-    return fit, env_model(t, fit[0][0], fit[0][1])
-
 
 def tauc_2_MW(tc):
     if tc < 0.0000001:  # probably units is nanoseconds
