@@ -3,7 +3,7 @@ import MDAnalysis as mda
 import matplotlib.pyplot as plt
 import matplotlib
 import sys
-
+import quantnmr.md as qnmd
 from MDAnalysis.analysis import align, rms, dihedrals
 
 from MDAnalysis.analysis.rms import rmsd
@@ -11,6 +11,123 @@ from MDAnalysis.analysis.rms import rmsd
 from numpy.linalg import norm
 
 import time
+
+# Bond and angle definitions
+
+bond_def = {
+    'ALA_CB': ['name CB', 'name CA'],
+    'ILE_CD': ['name CD', 'name CG1'],
+    'ILE_CG2': ['name CG2', 'name CB'],
+    'LEU_CD1': ['name CD1', 'name CG'],
+    'LEU_proR': ['name CD1', 'name CG'],
+    'LEU_CD2': ['name CD2', 'name CG'],
+    'LEU_proS': ['name CD2', 'name CG'],
+    'MET_CE': ['name SD', 'name CE'],
+    'VAL_CG1': ['name CG1', 'name CB'],
+    'VAL_proR': ['name CG1', 'name CB'],
+    'VAL_CG2': ['name CG2', 'name CB'],
+    'VAL_proS': ['name CG2', 'name CB'],
+}   
+
+phi_def = {
+    #'ALA_CB': '(name CB or name CA or name C or name O)',
+    'ALA_CB': '(name CB or name CA or name N or name HN)',
+    'ILE_CD': '(name CD or name CG1 or name CB or name CA)',
+    #'ILE_CG2': '(name CG2 or name CB or name CA or name C)',
+    'ILE_CG2': '(name CG2 or name CB or name CA or name N)',
+    'LEU_CD1': '(name CD1 or name CG or name CB or name CA)',
+    'LEU_proR': '(name CD1 or name CG or name CB or name CA)',
+    'LEU_CD2': '(name CD2 or name CG or name CB or name CA)',
+    'LEU_proS': '(name CD2 or name CG or name CB or name CA)',
+    'MET_CE': '(name CB or name CG or name SD or name CE)',
+    # 'VAL_CG1': '(name CG1 or name CB or name CA or name C)',
+    # 'VAL_proR': '(name CG1 or name CB or name CA or name C)',
+    # 'VAL_CG2': '(name CG2 or name CB or name CA or name C)',
+    # 'VAL_proS': '(name CG2 or name CB or name CA or name C)',
+    'VAL_CG1': '(name CG1 or name CB or name CA or name N)',
+    'VAL_proR': '(name CG1 or name CB or name CA or name N)',
+    'VAL_CG2': '(name CG2 or name CB or name CA or name N)',
+    'VAL_proS': '(name CG2 or name CB or name CA or name N)'
+}   
+
+theta_def = {
+    #'ALA_CB': '(name CB or name CA or name C)',
+    'ALA_CB': '(name CB or name CA or name N)',
+    'ILE_CD': '(name CD or name CG1 or name CB)',           
+    'ILE_CG2': '(name CG2 or name CB or name CA)',           
+    'LEU_CD1': '(name CD1 or name CG or name CB)',           
+    'LEU_proR': '(name CD1 or name CG or name CB)',           
+    'LEU_CD2': '(name CD2 or name CG or name CB)',           
+    'LEU_proS': '(name CD2 or name CG or name CB)',  
+    'MET_CE': '(name CG or name SD or name CE)',
+    'VAL_CG1': '(name CG1 or name CB or name CA)',           
+    'VAL_proR': '(name CG1 or name CB or name CA)',           
+    'VAL_CG2': '(name CG2 or name CB or name CA)',           
+    'VAL_proS': '(name CG2 or name CB or name CA)',
+}    
+
+
+def O2_from_subtrajectory_by_bond_vector(trajectory_list: list, system_dict: dict, factor: int=1):
+    '''
+    Calculate the O2 order parameter from subtrajectories of a trajectory list.
+    The subtrajectories are defined by the system_dict, which is a dictionary of lists of systems
+    factor is the number of subtrajectories to take from the original trajectory
+
+    '''
+    len_traj = len(trajectory_list[0].trajectory) # we assume all the trajectories in the list are the same length
+    span = len_traj//factor # we want minimum integer steps here e.g. 5001//10 = 500 (int) - length of traj to consider is 500
+
+    O2_dict = {} # we define a dictionary to store and return results
+
+    for aa_type in system_dict:
+        selection_string = f'resname {aa_type}'
+        selection_aa = trajectory_list[0].select_atoms(selection_string)
+        n_systems = selection_aa.n_residues
+        aa_idx = sorted(set(selection_aa.resids)) # reduces multiple atom selections down to just the residue ID numbers
+        print(aa_type, aa_idx)
+
+        for methyl in system_dict[aa_type]:
+            aa_methyl = f'{aa_type}_{methyl}'
+            if aa_methyl not in bond_def:
+                print(f'Error - did not select a valid methyl group - you should stop and fix this: {aa_methyl}?')
+            else:
+                # calc O2
+                O2_bond = np.zeros((len(trajectory_list)*factor, len(aa_idx)))
+                for i in range(len(trajectory_list)):
+                    for nj, j in enumerate(aa_idx):
+                        selection_0 = trajectory_list[i].select_atoms(f'resid {j} and {bond_def[aa_methyl][0]}')
+                        selection_1 = trajectory_list[i].select_atoms(f'resid {j} and {bond_def[aa_methyl][1]}')
+                        bond_vectors_normal = np.zeros((span, 3)) # matrix for normalized bond vectors in order times (5000ish), normalized bond vector (3)
+                        for k in range(factor):
+                            #fiter = t_sys[i].trajectory[k*span:(k+1)*span]
+                            #frames = [ts for ts in fiter]
+                            #print(k*span, (k+1)*span)
+                            en3 = 0
+                            for f in trajectory_list[i].trajectory[k*span:(k+1)*span]:    
+                                position_0 = selection_0.positions
+                                position_1 = selection_1.positions
+                                ts_bond_vector = position_0 - position_1 
+                                norm_vector = ts_bond_vector/np.linalg.norm(ts_bond_vector)
+                                bond_vectors_normal[en3, :] = norm_vector
+                                en3 +=1 
+                            # print(calc_O2_from_traj_unit_vectors(bond_vectors_normal))
+                            O2_bond[i*factor+k, nj] = qnmd.calc_O2_from_traj_unit_vectors(bond_vectors_normal)
+                        
+                O2_dict[aa_methyl] = {'resnums': aa_idx, 'O2_values': O2_bond.T}
+
+    return O2_dict
+    
+    
+
+def calc_O2_from_traj_unit_vectors(uvs): #nx3 numpy matrix
+    x_sq = uvs[:, 0]**2
+    y_sq = uvs[:, 1]**2
+    z_sq = uvs[:, 2]**2
+    xy = uvs[:, 0]*uvs[:, 1]
+    xz = uvs[:, 0]*uvs[:, 2]
+    yz = uvs[:, 1]*uvs[:, 2]
+    return (3/2) * (x_sq.mean()**2 + y_sq.mean()**2 + z_sq.mean()**2 + 
+              2*xy.mean()**2 +  2*xz.mean()**2 +  2*yz.mean()**2) - 0.5
 
 
 
