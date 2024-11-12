@@ -56,6 +56,29 @@ def sample_matrix_to_schedule(sample_matrix):
     # return it
     return pgs_schedule + rest_schedule
 
+def sample_matrix_to_coords(sample_matrix):
+    # we use these to store a list with sample lines in them for PGS and the rest of the samples
+    X = sample_matrix.shape[0]
+    Y = sample_matrix.shape[1]
+    schedule = []
+
+
+    # go through entire sample space creating PGS lines and rest lines
+    for y in range(Y):
+        for x in range(X):
+            if sample_matrix[x][y] == 1:
+                schedule.append([x,y])
+
+
+    # keep 0,0 line
+    temp = schedule.pop(0)
+    # shuffle rest of PGS samples
+    random.shuffle(schedule)
+    # add 0,0 to the shuffle
+    schedule.insert(0, temp)
+
+    # return it
+    return schedule
 
 # gaps
 def sine_g(x, t, N):
